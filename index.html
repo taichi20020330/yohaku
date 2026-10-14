@@ -171,6 +171,7 @@ svg#field.panning{cursor:grabbing}
       <input id="newName" placeholder="新しいプロジェクトの名前（例：卒論の問い、生活史について）" aria-label="新しいプロジェクトの名前">
       <button class="btn primary" type="submit">はじめる</button>
     </form>
+    <div class="banner" id="loginBanner" hidden><p>Googleでログインすると、スマホでもPCでも同じメモが見られます。ログインしない間は、このブラウザの中にだけ保存されます。</p><button class="btn primary" id="loginBtn">Googleでログイン</button></div>
     <div class="banner" id="importBanner" hidden><p id="importText"></p><button class="btn" id="importSkip">取り込まない</button><button class="btn primary" id="importGo">取り込む</button></div>
     <div class="home-tools"><span id="pcount"></span><span class="sp"></span><button class="btn" id="allBtn">すべてを一画面で見る</button><button class="btn" id="mergeMode">まとめる</button></div>
     <div class="grid" id="grid"></div>
@@ -235,7 +236,7 @@ svg#field.panning{cursor:grabbing}
 <aside class="sheet menu" id="menu" hidden>
   <header><b style="flex:1">保存と復元</b><button class="icon-btn" id="menuClose">閉じる</button></header>
   <p class="empty" style="margin:0" id="menuNote"></p>
-  <div class="row"><button class="btn" id="copyAll">すべてコピー</button><button class="btn" id="importBtn">貼り付けた内容で復元</button></div>
+  <div class="row"><button class="btn" id="copyAll">すべてコピー</button><button class="btn" id="importBtn">貼り付けた内容で復元</button><button class="btn" id="logoutBtn" hidden>ログアウト</button></div>
   <textarea id="dump" aria-label="バックアップ内容"></textarea>
 </aside>
 <div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
@@ -373,11 +374,51 @@ function scheduleRender(){ clearTimeout(renderT); renderT=setTimeout(()=>{
   else renderHome();
 },200); }
 
+/* ---------- Firebase (used when the page runs outside claude.ai, e.g. GitHub Pages) ---------- */
+const FIREBASE_CONFIG={
+  apiKey:"",
+  authDomain:"yohaku-4f5b1.firebaseapp.com",
+  projectId:"yohaku-4f5b1",
+  storageBucket:"yohaku-4f5b1.firebasestorage.app",
+  messagingSenderId:"",
+  appId:""
+};
+let FB=null;
+async function firebaseDB(){
+  const base='https://www.gstatic.com/firebasejs/10.12.2/';
+  const [appM,authM,fs]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);
+  const app=appM.initializeApp(FIREBASE_CONFIG), auth=authM.getAuth(app);
+  let store;
+  try{ store=fs.initializeFirestore(app,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})}); }
+  catch(e){ store=fs.getFirestore(app); }
+  const user=await new Promise(r=>{const off=authM.onAuthStateChanged(auth,u=>{off();r(u);});});
+  FB={auth,authM,user};
+  if(!user) return null;
+  const pre='users/'+user.uid+'/';
+  const onErr=e=>{ setSync('error'); toast(e&&e.code==='permission-denied'?'保存が拒否されました。Firestoreのルールを確認してください':'保存できませんでした。通信が戻ると自動で送られます'); };
+  // Firestore keeps writes locally (offline too) and sends them when it can, so a write counts as done at once.
+  return {
+    doc:p=>({ set:b=>{fs.setDoc(fs.doc(store,pre+p),b).catch(onErr);return Promise.resolve();},
+              delete:()=>{fs.deleteDoc(fs.doc(store,pre+p)).catch(onErr);return Promise.resolve();} }),
+    collection:c=>({ onSnapshot:(next,err)=>fs.onSnapshot(fs.collection(store,pre+c),next,err) })
+  };
+}
+$('loginBtn').onclick=async()=>{
+  try{ await FB.authM.signInWithPopup(FB.auth,new FB.authM.GoogleAuthProvider()); location.reload(); }
+  catch(e){ toast(e&&e.code==='auth/unauthorized-domain'?'このURLがFirebaseの承認済みドメインに入っていません':'ログインできませんでした'); }
+};
+$('logoutBtn').onclick=async()=>{ try{ await FB.authM.signOut(FB.auth); }catch(e){} location.reload(); };
+
 async function boot(){
   DB=blank(); rebuildAdj(); setSync('loading');
   $('grid').innerHTML='<p class="loading">メモを読み込んでいます…</p>';
   let d=null;
-  try{ d=window.claude&&window.claude.use?await window.claude.use('db'):null; }catch(e){ d=null; }
+  if(window.claude&&window.claude.use){ try{ d=await window.claude.use('db'); }catch(e){ d=null; } }
+  else if(FIREBASE_CONFIG.apiKey){
+    try{ d=await firebaseDB(); }catch(e){ d=null; toast('Firebaseに接続できませんでした。このブラウザに保存します'); }
+    if(!d&&FB) $('loginBanner').hidden=false;
+    if(d&&FB&&FB.user) $('logoutBtn').hidden=false;
+  }
   if(!d){
     MODE='local'; DB=loadLocal()||blank(); rebuildAdj(); setSync('local'); renderHome(); return;
   }
@@ -905,7 +946,7 @@ function renderSheet(force){
 /* ================= misc ================= */
 $('search').addEventListener('input',e=>{query=e.target.value;build();});
 document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{const m=$('menu');m.hidden=!m.hidden;if(!m.hidden){persistPos();
-  $('menuNote').textContent=MODE==='db'?'メモはこのページ自体に保存され、スマホでもPCでも同じものが見られます。念のための控えが欲しいときは、下の内容をコピーしておいてください。':'いまはこのブラウザの中にだけ保存しています。別の端末へ移すときや控えには、下の内容をコピーしておいてください。';
+  $('menuNote').textContent=MODE==='db'?(FB&&FB.user?`${FB.user.email||'Googleアカウント'} で保存しています。`:'')+'スマホでもPCでも同じメモが見られます。念のための控えが欲しいときは、下の内容をコピーしておいてください。':'いまはこのブラウザの中にだけ保存しています。別の端末へ移すときや控えには、下の内容をコピーしておいてください。';
   $('dump').value=JSON.stringify(DB,strip);}});
 $('menuClose').onclick=()=>{$('menu').hidden=true};
 $('copyAll').onclick=()=>{const t=$('dump');navigator.clipboard.writeText(t.value).then(()=>toast('コピーしました'),()=>{t.select();toast('選択しました。手動でコピーしてください');});};

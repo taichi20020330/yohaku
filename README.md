@@ -33,4 +33,9 @@
 ## 保存先
 
 - claude.ai のアーティファクトとして開いたとき：アーティファクトのデータベースに保存されます（端末をまたいで同期）。
-- それ以外（このリポジトリの `index.html` を直接開いたときなど）：ブラウザの localStorage に保存されます。「保存と復元」からJSONをコピーして移せます。
+- GitHub Pages など claude.ai の外で開いたとき：Googleでログインすると Firebase（Firestore）に保存されます。データは `users/{uid}/nodes`・`edges`・`projects` に置かれ、`firestore.rules` により本人しか読み書きできません。オフラインでも書け、通信が戻ると同期されます。
+- ログインしていないとき：ブラウザの localStorage に保存されます。「保存と復元」からJSONをコピーして移せます。
+
+### Firebase の設定
+
+`index.html` の `FIREBASE_CONFIG` に、Firebase コンソールの「プロジェクトの設定 → マイアプリ（ウェブ）」に表示される値を入れます（公開しても問題のない値です）。Firestore の「ルール」には `firestore.rules` の内容を貼ります。
