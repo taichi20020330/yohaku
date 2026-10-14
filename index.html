@@ -171,7 +171,7 @@ svg#field.panning{cursor:grabbing}
       <input id="newName" placeholder="新しいプロジェクトの名前（例：卒論の問い、生活史について）" aria-label="新しいプロジェクトの名前">
       <button class="btn primary" type="submit">はじめる</button>
     </form>
-    <div class="banner" id="loginBanner" hidden><p>Googleでログインすると、スマホでもPCでも同じメモが見られます。ログインしない間は、このブラウザの中にだけ保存されます。</p><button class="btn primary" id="loginBtn">Googleでログイン</button></div>
+    <div class="banner" id="loginBanner" hidden><p><b>お試しモード</b>です。サンプルを自由に広げたり、書き込んだり、つないだりできます。書いた内容は保存されず、ページを閉じると元に戻ります。</p><button class="btn" id="loginBtn">ログインして自分のメモを使う</button></div>
     <div class="banner" id="importBanner" hidden><p id="importText"></p><button class="btn" id="importSkip">取り込まない</button><button class="btn primary" id="importGo">取り込む</button></div>
     <div class="home-tools"><span id="pcount"></span><span class="sp"></span><button class="btn" id="allBtn">すべてを一画面で見る</button><button class="btn" id="mergeMode">まとめる</button></div>
     <div class="grid" id="grid"></div>
@@ -317,13 +317,14 @@ function docsOf(){
   return m;
 }
 function setSync(state){
-  const t={loading:'読み込み中…',saving:'保存中…',saved:'保存済み',local:'このブラウザだけに保存中',error:'保存できていません'}[state]||'';
+  const t={loading:'読み込み中…',saving:'保存中…',saved:'保存済み',local:'このブラウザだけに保存中',guest:'お試し中・保存されません',error:'保存できていません'}[state]||'';
   document.querySelectorAll('[data-sync]').forEach(e=>{e.textContent=t;e.classList.toggle('err',state==='error');});
 }
 function writeLS(){ scheduleFlush(); }
 function scheduleFlush(ms=600){ if(MODE==='loading') return; clearTimeout(flushT); flushT=setTimeout(flush,ms); }
 async function flush(){
   flushT=null;
+  if(MODE==='guest'){ setSync('guest'); return; }
   if(MODE==='local'){ try{localStorage.setItem(KEY,JSON.stringify(DB,strip));setSync('local');}catch(e){setSync('error');} return; }
   if(MODE!=='db') return;
   if(flushing){ scheduleFlush(); return; }
@@ -374,6 +375,30 @@ function scheduleRender(){ clearTimeout(renderT); renderT=setTimeout(()=>{
   else renderHome();
 },200); }
 
+/* ---------- sample shown to visitors who are not signed in (kept in memory only) ---------- */
+function sampleDB(){
+  const d=blank(), t=Date.now(), P=(id,name,cur,page,ago)=>d.projects.push({id,name,created:t,updated:t-ago,current:cur,page,manual:'quote'});
+  P('sa','サンプル：草枕を読む','a_b',5,0); P('sb','サンプル：科学者とあたま','b_b',12,60000); P('sc','サンプル：遠野物語','c_b',null,120000);
+  const N=(id,p,type,text,x={})=>{d.nodes[id]={id,type,text,t,projects:[p],pos:{},...x};};
+  N('a_b','sa','book','草枕',{author:'夏目漱石'});
+  N('a_1','sa','quote','山路を登りながら、こう考えた。\n智に働けば角が立つ。情に棹させば流される。意地を通せば窮屈だ。とかくに人の世は住みにくい。',{book:'a_b',page:5});
+  N('a_2','sa','question','理屈でも感情でもない「第三の立ち位置」は、どうすれば持てるのか。それは逃げなのか、それとも新しい見方なのか。');
+  N('a_3','sa','thought','漱石の「非人情」は、対象から距離をとって眺める技術。観察者の倫理に近い気がする');
+  N('a_4','sa','ref','『硝子戸の中』夏目漱石',{book:'a_b'});
+  N('a_5','sa','thought','これは『科学者とあたま』の「恋は盲目」の話と、逆向きに同じことを言っている！');
+  N('b_b','sb','book','科学者とあたま',{author:'寺田寅彦'});
+  N('b_1','sb','quote','頭のいい人には恋ができない。恋は盲目である。',{book:'b_b',page:12});
+  N('b_2','sb','thought','わかりすぎる人は踏み出せない。研究にも「盲目」になる時間がいる');
+  N('b_3','sb','question','観察者として距離をとることと、当事者として巻き込まれることは、一人の研究者のなかで両立できるのか。できるとしたら、どんな順番で行き来すればいいのか。');
+  N('c_b','sc','book','遠野物語',{author:'柳田國男'});
+  N('c_1','sc','quote','願はくは之を語りて平地人を戦慄せしめよ。',{book:'c_b',page:1});
+  N('c_2','sc','thought','柳田は佐々木喜善の語りを書き留めた。聞き書きする人は、語りの内側にいるのか外側にいるのか');
+  N('c_3','sc','ref','『遠野物語拾遺』柳田國男',{book:'c_b'});
+  d.edges=[['a_1','a_b'],['a_4','a_b'],['a_2','a_1'],['a_3','a_1'],['a_3','a_2'],['a_5','a_3'],['a_5','b_1'],
+           ['b_1','b_b'],['b_2','b_1'],['b_3','b_2'],['b_3','c_2'],['c_1','c_b'],['c_3','c_b'],['c_2','c_1']];
+  return d;
+}
+
 /* ---------- Firebase (used when the page runs outside claude.ai, e.g. GitHub Pages) ---------- */
 const FIREBASE_CONFIG={
   apiKey:"AIzaSyC14quztndFwMNXa5241bIHiY9CKoUE50Y",
@@ -416,8 +441,8 @@ async function boot(){
   if(window.claude&&window.claude.use){ try{ d=await window.claude.use('db'); }catch(e){ d=null; } }
   else if(FIREBASE_CONFIG.apiKey){
     try{ d=await firebaseDB(); }catch(e){ d=null; toast('Firebaseに接続できませんでした。このブラウザに保存します'); }
-    if(!d&&FB) $('loginBanner').hidden=false;
     if(d&&FB&&FB.user) $('logoutBtn').hidden=false;
+    if(!d){ MODE='guest'; DB=sampleDB(); rebuildAdj(); setSync('guest'); $('loginBanner').hidden=!FB; renderHome(); return; }
   }
   if(!d){
     MODE='local'; DB=loadLocal()||blank(); rebuildAdj(); setSync('local'); renderHome(); return;
@@ -946,7 +971,7 @@ function renderSheet(force){
 /* ================= misc ================= */
 $('search').addEventListener('input',e=>{query=e.target.value;build();});
 document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>{const m=$('menu');m.hidden=!m.hidden;if(!m.hidden){persistPos();
-  $('menuNote').textContent=MODE==='db'?(FB&&FB.user?`${FB.user.email||'Googleアカウント'} で保存しています。`:'')+'スマホでもPCでも同じメモが見られます。念のための控えが欲しいときは、下の内容をコピーしておいてください。':'いまはこのブラウザの中にだけ保存しています。別の端末へ移すときや控えには、下の内容をコピーしておいてください。';
+  $('menuNote').textContent=MODE==='guest'?'お試しモードでは何も保存されません。書いたものを残したいときは、下の内容をコピーしておいてください。':MODE==='db'?(FB&&FB.user?`${FB.user.email||'Googleアカウント'} で保存しています。`:'')+'スマホでもPCでも同じメモが見られます。念のための控えが欲しいときは、下の内容をコピーしておいてください。':'いまはこのブラウザの中にだけ保存しています。別の端末へ移すときや控えには、下の内容をコピーしておいてください。';
   $('dump').value=JSON.stringify(DB,strip);}});
 $('menuClose').onclick=()=>{$('menu').hidden=true};
 $('copyAll').onclick=()=>{const t=$('dump');navigator.clipboard.writeText(t.value).then(()=>toast('コピーしました'),()=>{t.select();toast('選択しました。手動でコピーしてください');});};
