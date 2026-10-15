@@ -75,6 +75,30 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,.pcard:focus-vis
 .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--hover);font-size:13px;line-height:1.6}
 .banner p{margin:0;flex:1;min-width:200px}
 .loading{font-size:14px;color:var(--muted);padding:40px 0;text-align:center}
+.acct{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:var(--surface);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct:hover{background:var(--hover)}
+.acct.cta{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--fg) 28%,transparent)}
+.auth{width:min(380px,100%);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px;display:grid;gap:14px}
+.auth header{display:flex;align-items:center;gap:8px}
+.auth header b{flex:1;font-size:17px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--hover);border-radius:8px;padding:3px}
+.tabs button{border-radius:6px;padding:7px;font-size:13px;color:var(--muted)}
+.tabs button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:500}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;font-size:14px}
+.gbtn svg{width:18px;height:18px}
+.or{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.auth label{display:grid;gap:5px;font-size:12px;color:var(--muted)}
+.auth input{border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);padding:9px 11px;font:inherit;font-size:15px}
+.auth .primary{padding:10px;font-size:14px}
+.auth .err{margin:0;font-size:13px;color:var(--danger);line-height:1.6}
+.auth .ok{margin:0;font-size:13px;color:var(--thought);line-height:1.6}
+.auth .small{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+.linkbtn{font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;justify-self:start;padding:0}
+.linkbtn:hover{color:var(--fg)}
+.acctmenu{position:fixed;top:56px;right:16px;z-index:8;width:min(280px,calc(100% - 32px));background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:14px;display:grid;gap:10px;font-size:13px}
+.acctmenu .who{color:var(--muted);word-break:break-all}
 
 /* ---------- canvas ---------- */
 svg#field{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
@@ -164,14 +188,14 @@ svg#field.panning{cursor:grabbing}
 
 <!-- ============ HOME ============ -->
 <section class="view" id="home">
-  <header class="home-top"><span class="brand">yohaku</span><span style="flex:1"></span><span class="sync" data-sync></span><button class="icon-btn" data-menu>保存と復元</button></header>
+  <header class="home-top"><span class="brand">yohaku</span><span style="flex:1"></span><span class="sync" data-sync></span><button class="icon-btn" data-menu>保存と復元</button><button class="acct" data-acct hidden></button></header>
   <main class="home-main">
     <h1>どのメモから始める？</h1>
     <form class="newp" id="newForm">
       <input id="newName" placeholder="新しいプロジェクトの名前（例：卒論の問い、生活史について）" aria-label="新しいプロジェクトの名前">
       <button class="btn primary" type="submit">はじめる</button>
     </form>
-    <div class="banner" id="loginBanner" hidden><p><b>お試しモード</b>です。サンプルを自由に広げたり、書き込んだり、つないだりできます。書いた内容は保存されず、ページを閉じると元に戻ります。</p><button class="btn" id="loginBtn">ログインして自分のメモを使う</button></div>
+    <div class="banner" id="loginBanner" hidden><p><b>お試しモード</b>です。サンプルを自由に広げたり、書き込んだり、つないだりできます。書いた内容は保存されず、ページを閉じると元に戻ります。</p><button class="btn primary" id="loginBtn">無料で登録して保存する</button></div>
     <div class="banner" id="importBanner" hidden><p id="importText"></p><button class="btn" id="importSkip">取り込まない</button><button class="btn primary" id="importGo">取り込む</button></div>
     <div class="home-tools"><span id="pcount"></span><span class="sp"></span><button class="btn" id="allBtn">すべてを一画面で見る</button><button class="btn" id="mergeMode">まとめる</button></div>
     <div class="grid" id="grid"></div>
@@ -201,6 +225,7 @@ svg#field.panning{cursor:grabbing}
     <input class="search" id="search" type="search" placeholder="メモを探す" aria-label="メモを探す">
     <span class="sync" data-sync></span>
     <button class="icon-btn" data-menu>保存と復元</button>
+    <button class="acct" data-acct hidden></button>
   </div>
   <div class="legend" aria-hidden="true">
     <span><i style="background:var(--book)"></i>本</span>
@@ -239,6 +264,29 @@ svg#field.panning{cursor:grabbing}
   <div class="row"><button class="btn" id="copyAll">すべてコピー</button><button class="btn" id="importBtn">貼り付けた内容で復元</button><button class="btn" id="logoutBtn" hidden>ログアウト</button></div>
   <textarea id="dump" aria-label="バックアップ内容"></textarea>
 </aside>
+<div class="modal" id="authModal" hidden>
+  <form class="auth" id="authForm" novalidate>
+    <header><b id="authTitle">yohaku にログイン</b><button type="button" class="icon-btn" id="authClose" aria-label="閉じる">✕</button></header>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="signup">新規登録</button>
+      <button type="button" role="tab" data-tab="login">ログイン</button>
+    </div>
+    <button type="button" class="btn gbtn" id="googleBtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>Googleで続ける</span></button>
+    <div class="or">またはメールアドレスで</div>
+    <label for="authEmail">メールアドレス<input id="authEmail" type="email" autocomplete="email" inputmode="email"></label>
+    <label for="authPass">パスワード<input id="authPass" type="password" autocomplete="current-password"></label>
+    <p class="small" id="authHint"></p>
+    <p class="err" id="authErr" hidden></p>
+    <p class="ok" id="authOk" hidden></p>
+    <button class="btn primary" type="submit" id="authSubmit">登録する</button>
+    <button type="button" class="linkbtn" id="forgotBtn">パスワードを忘れた</button>
+    <p class="small" id="authNote">登録すると、メモはあなただけが読める場所に保存され、スマホでもPCでも同じものが見られます。</p>
+  </form>
+</div>
+<div class="acctmenu" id="acctMenu" hidden>
+  <div class="who" id="acctWho"></div>
+  <button class="btn" id="logoutBtn2">ログアウト</button>
+</div>
 <div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 
 <script>
@@ -324,7 +372,7 @@ function writeLS(){ scheduleFlush(); }
 function scheduleFlush(ms=600){ if(MODE==='loading') return; clearTimeout(flushT); flushT=setTimeout(flush,ms); }
 async function flush(){
   flushT=null;
-  if(MODE==='guest'){ setSync('guest'); return; }
+  if(MODE==='guest'){ setSync('guest'); saveGuestDraft(); return; }
   if(MODE==='local'){ try{localStorage.setItem(KEY,JSON.stringify(DB,strip));setSync('local');}catch(e){setSync('error');} return; }
   if(MODE!=='db') return;
   if(flushing){ scheduleFlush(); return; }
@@ -374,6 +422,16 @@ function scheduleRender(){ clearTimeout(renderT); renderT=setTimeout(()=>{
   if(root){ if(!DB.projects.some(p=>p.id===root.id)){showHome();return;} root=DB.projects.find(p=>p.id===root.id); refresh(); }
   else renderHome();
 },200); }
+
+/* ---------- trial mode: what a visitor writes lives in this tab only, so it can follow them into a new account ---------- */
+const GKEY='yohaku.guest';
+const contentSig=d=>stable({n:Object.values(d.nodes).map(n=>[n.id,n.type,n.text,n.book||null,n.page||null,[...n.projects].sort()]).sort(),
+  e:d.edges.map(([a,b])=>ekey(a,b)).sort(),p:d.projects.map(p=>[p.id,p.name]).sort()});
+let SAMPLE_SIG=null;
+function saveGuestDraft(){
+  try{ if(contentSig(DB)===SAMPLE_SIG) sessionStorage.removeItem(GKEY); else sessionStorage.setItem(GKEY,JSON.stringify(DB,strip)); }catch(e){}
+}
+function guestDraft(){ try{ const d=JSON.parse(sessionStorage.getItem(GKEY)); return d&&d.v===3?d:null; }catch(e){ return null; } }
 
 /* ---------- sample shown to visitors who are not signed in (kept in memory only) ---------- */
 function sampleDB(){
@@ -428,11 +486,82 @@ async function firebaseDB(){
     collection:c=>({ onSnapshot:(next,err)=>fs.onSnapshot(fs.collection(store,pre+c),next,err) })
   };
 }
-$('loginBtn').onclick=async()=>{
-  try{ await FB.authM.signInWithPopup(FB.auth,new FB.authM.GoogleAuthProvider()); location.reload(); }
-  catch(e){ toast(e&&e.code==='auth/unauthorized-domain'?'このURLがFirebaseの承認済みドメインに入っていません':'ログインできませんでした'); }
+const AUTH_ERR={
+  'auth/invalid-email':'メールアドレスの形が正しくありません。',
+  'auth/missing-email':'メールアドレスを入れてください。',
+  'auth/missing-password':'パスワードを入れてください。',
+  'auth/weak-password':'パスワードは6文字以上にしてください。',
+  'auth/email-already-in-use':'このメールアドレスはもう登録されています。「ログイン」から入ってください。',
+  'auth/invalid-credential':'メールアドレスかパスワードが違います。',
+  'auth/wrong-password':'メールアドレスかパスワードが違います。',
+  'auth/user-not-found':'このメールアドレスは登録されていません。「新規登録」から始めてください。',
+  'auth/too-many-requests':'試した回数が多すぎます。少し時間をおいてからもう一度どうぞ。',
+  'auth/network-request-failed':'通信できませんでした。電波のよいところでもう一度どうぞ。',
+  'auth/operation-not-allowed':'このログイン方法はまだ有効になっていません（Firebaseの設定が必要です）。',
+  'auth/unauthorized-domain':'このURLはFirebaseの承認済みドメインに入っていません。',
+  'auth/popup-blocked':'ポップアップがブロックされました。ブラウザの設定で許可してください。'
 };
-$('logoutBtn').onclick=async()=>{ try{ await FB.authM.signOut(FB.auth); }catch(e){} location.reload(); };
+let authTab='signup';
+function setAuthTab(t){
+  authTab=t;
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>{const on=b.dataset.tab===t; b.classList.toggle('on',on); b.setAttribute('aria-selected',on);});
+  $('authTitle').textContent=t==='signup'?'yohaku をはじめる':'yohaku にログイン';
+  $('authSubmit').textContent=t==='signup'?'登録する':'ログイン';
+  $('authPass').autocomplete=t==='signup'?'new-password':'current-password';
+  $('authHint').textContent=t==='signup'?'パスワードは6文字以上。':'';
+  $('authHint').hidden=t!=='signup';
+  $('forgotBtn').hidden=t==='signup';
+  $('authNote').hidden=t!=='signup';
+  authMsg();
+}
+function authMsg(err,ok){ $('authErr').hidden=!err; $('authErr').textContent=err||''; $('authOk').hidden=!ok; $('authOk').textContent=ok||''; }
+function openAuth(t){
+  if(!FB){ toast('ログインの準備ができていません。通信を確認して、ページを読み込み直してください'); return; }
+  setAuthTab(t||'signup'); $('authModal').hidden=false; $('acctMenu').hidden=true;
+  if(guestDraft()) $('authNote').textContent='お試しで書いたメモは、登録したアカウントに引き継げます。';
+  setTimeout(()=>$('authEmail').focus(),30);
+}
+function closeAuth(){ $('authModal').hidden=true; }
+async function authBusy(fn){
+  const b=$('authSubmit'); b.disabled=true; $('googleBtn').disabled=true; authMsg();
+  try{ await fn(); }catch(e){ if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request') authMsg(AUTH_ERR[e&&e.code]||'うまくいきませんでした。もう一度お試しください。'); }
+  b.disabled=false; $('googleBtn').disabled=false;
+}
+const signedIn=()=>{ saveGuestDraft(); location.reload(); };
+document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>setAuthTab(b.dataset.tab));
+$('authClose').onclick=closeAuth;
+$('authModal').addEventListener('click',e=>{ if(e.target===$('authModal')) closeAuth(); });
+$('authModal').addEventListener('keydown',e=>{ if(e.key==='Escape') closeAuth(); });
+$('googleBtn').onclick=()=>authBusy(async()=>{ await FB.authM.signInWithPopup(FB.auth,new FB.authM.GoogleAuthProvider()); signedIn(); });
+$('authForm').onsubmit=e=>{
+  e.preventDefault();
+  const email=$('authEmail').value.trim(), pass=$('authPass').value;
+  if(!email) return authMsg(AUTH_ERR['auth/missing-email']);
+  if(!pass) return authMsg(AUTH_ERR['auth/missing-password']);
+  if(authTab==='signup'&&pass.length<6) return authMsg(AUTH_ERR['auth/weak-password']);
+  authBusy(async()=>{
+    if(authTab==='signup') await FB.authM.createUserWithEmailAndPassword(FB.auth,email,pass);
+    else await FB.authM.signInWithEmailAndPassword(FB.auth,email,pass);
+    signedIn();
+  });
+};
+$('forgotBtn').onclick=()=>{
+  const email=$('authEmail').value.trim();
+  if(!email) return authMsg('上の欄にメールアドレスを入れてから、もう一度押してください。');
+  authBusy(async()=>{ await FB.authM.sendPasswordResetEmail(FB.auth,email); authMsg(null,`${email} に、パスワードを決め直すためのメールを送りました。届かないときは迷惑メールも確認してください。`); });
+};
+$('loginBtn').onclick=()=>openAuth('signup');
+async function logout(){ try{ await FB.authM.signOut(FB.auth); }catch(e){} try{sessionStorage.removeItem(GKEY);}catch(e){} location.reload(); }
+$('logoutBtn').onclick=logout; $('logoutBtn2').onclick=logout;
+function renderAcct(){
+  const u=FB&&FB.user, show=!!FB&&(MODE==='guest'||!!u);
+  document.querySelectorAll('[data-acct]').forEach(b=>{
+    b.hidden=!show; b.classList.toggle('cta',!u);
+    b.textContent=u?(u.displayName||u.email||'アカウント'):'登録 / ログイン';
+    b.onclick=()=>{ if(!u) openAuth(MODE==='guest'?'signup':'login'); else { $('acctWho').textContent=(u.email||'')+' でログイン中'; $('acctMenu').hidden=!$('acctMenu').hidden; } };
+  });
+}
+document.addEventListener('click',e=>{ const m=$('acctMenu'); if(!m.hidden&&!m.contains(e.target)&&!e.target.closest('[data-acct]')) m.hidden=true; });
 
 async function boot(){
   DB=blank(); rebuildAdj(); setSync('loading');
@@ -442,14 +571,14 @@ async function boot(){
   else if(FIREBASE_CONFIG.apiKey){
     try{ d=await firebaseDB(); }catch(e){ d=null; toast('Firebaseに接続できませんでした。このブラウザに保存します'); }
     if(d&&FB&&FB.user) $('logoutBtn').hidden=false;
-    if(!d){ MODE='guest'; DB=sampleDB(); rebuildAdj(); setSync('guest'); $('loginBanner').hidden=!FB; renderHome(); return; }
+    if(!d){ MODE='guest'; DB=sampleDB(); SAMPLE_SIG=contentSig(DB); try{sessionStorage.removeItem(GKEY);}catch(e){} rebuildAdj(); setSync('guest'); $('loginBanner').hidden=!FB; renderAcct(); renderHome(); return; }
   }
   if(!d){
     MODE='local'; DB=loadLocal()||blank(); rebuildAdj(); setSync('local'); renderHome(); return;
   }
   dbx=d;
   const got={nodes:false,edges:false,projects:false};
-  const done=()=>{ if(MODE==='loading'&&got.nodes&&got.edges&&got.projects){ MODE='db'; setSync('saved'); renderHome(); } };
+  const done=()=>{ if(MODE==='loading'&&got.nodes&&got.edges&&got.projects){ MODE='db'; setSync('saved'); renderAcct(); renderHome(); } };
   for(const col of ['projects','nodes','edges']){
     dbx.collection(col).onSnapshot(snap=>{ applyRemote(col,snap); got[col]=true; done(); },
       e=>{ if(MODE==='loading'){ MODE='local'; DB=loadLocal()||blank(); rebuildAdj(); setSync('local'); renderHome(); toast('保存先に接続できなかったため、このブラウザに保存します'); } else { setSync('error'); } });
@@ -461,25 +590,31 @@ function save(){ if(root) root.updated=Date.now(); scheduleFlush(); }
 /* ---------- bring memos kept only in this browser into the database ---------- */
 function localCandidate(){
   if(MODE!=='db') return null;
+  const G=guestDraft();
+  if(G){ const fresh=Object.keys(G.nodes).filter(id=>!DB.nodes[id]).length; if(fresh) return {L:G,fresh,guest:true}; try{sessionStorage.removeItem(GKEY);}catch(e){} }
+  if(FB&&FB.user) return null; // old browser-only memos belong to whoever used this browser; offer them only outside accounts
   try{ if(localStorage.getItem('yohaku.imported')) return null; }catch(e){ return null; }
   const L=loadLocal(); if(!L||!Object.keys(L.nodes).length) return null;
   const fresh=Object.keys(L.nodes).filter(id=>!DB.nodes[id]).length;
   return fresh?{L,fresh}:null;
 }
+function mergeIn(L){
+  for(const p of L.projects) if(!DB.projects.some(x=>x.id===p.id)) DB.projects.push(p);
+  for(const n of Object.values(L.nodes)) if(!DB.nodes[n.id]) DB.nodes[n.id]=n;
+  for(const [a,b] of L.edges) if(DB.nodes[a]&&DB.nodes[b]&&!ADJ.get(a)?.has(b)){DB.edges.push([a,b]);adjAdd(a,b);}
+}
 function renderImport(){
   const c=localCandidate(), el=$('importBanner');
   if(!c){el.hidden=true;return;}
   el.hidden=false;
-  $('importText').textContent=`このブラウザに、まだ取り込んでいないメモが${c.fresh}件あります（プロジェクト${c.L.projects.length}つ）。取り込むと、どの端末からでも見られるようになります。`;
+  $('importText').textContent=c.guest?`お試しモードで書いたメモが${c.fresh}件あります（サンプルを含む・プロジェクト${c.L.projects.length}つ）。このアカウントに引き継ぎますか？`:`このブラウザに、まだ取り込んでいないメモが${c.fresh}件あります（プロジェクト${c.L.projects.length}つ）。取り込むと、どの端末からでも見られるようになります。`;
+  $('importGo').textContent=c.guest?'引き継ぐ':'取り込む';
   $('importGo').onclick=()=>{
-    const L=c.L;
-    for(const p of L.projects) if(!DB.projects.some(x=>x.id===p.id)) DB.projects.push(p);
-    for(const n of Object.values(L.nodes)) if(!DB.nodes[n.id]) DB.nodes[n.id]=n;
-    for(const [a,b] of L.edges) if(DB.nodes[a]&&DB.nodes[b]&&!ADJ.get(a)?.has(b)){DB.edges.push([a,b]);adjAdd(a,b);}
-    try{localStorage.setItem('yohaku.imported','1');}catch(e){}
-    scheduleFlush(0); renderHome(); toast('取り込みました');
+    mergeIn(c.L);
+    try{ if(c.guest) sessionStorage.removeItem(GKEY); else localStorage.setItem('yohaku.imported','1'); }catch(e){}
+    scheduleFlush(0); renderHome(); toast(c.guest?'引き継ぎました':'取り込みました');
   };
-  $('importSkip').onclick=()=>{ try{localStorage.setItem('yohaku.imported','1');}catch(e){} el.hidden=true; };
+  $('importSkip').onclick=()=>{ try{ if(c.guest) sessionStorage.removeItem(GKEY); else localStorage.setItem('yohaku.imported','1'); }catch(e){} el.hidden=true; };
 }
 
 /* ================= home ================= */
@@ -517,7 +652,8 @@ function renderHome(){
       <div class="mt">本 ${nbk}冊 · メモ ${mem.length-nbk} · ${d}</div>
       ${lp.length?`<div class="ln">つながり：${lp.map(x=>`<b>${esc(x)}</b>`).join('、')}</div>`:''}
       <div class="acts"><button class="del" data-del="${p.id}">削除</button></div>
-    </div>`;}).join('')||'<p class="empty">まだプロジェクトがありません。上の欄に読みたいテーマや本の名前を書いて、はじめましょう。</p>';
+    </div>`;}).join('')||`<div class="empty" style="display:grid;gap:10px;justify-items:start"><p style="margin:0">まだプロジェクトがありません。上の欄に、いま読んでいる本やテーマの名前を書いてはじめましょう。</p>${MODE==='guest'?'':'<button class="btn" id="sampleBtn">サンプルを入れて使い方を見る</button>'}</div>`;
+  if($('sampleBtn')) $('sampleBtn').onclick=()=>{ mergeIn(sampleDB()); scheduleFlush(0); renderHome(); toast('サンプルを入れました。いらなくなったら削除できます'); };
   $('grid').querySelectorAll('.pcard').forEach(c=>{
     const id=c.dataset.p;
     c.onclick=e=>{

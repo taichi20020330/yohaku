@@ -33,9 +33,9 @@
 ## 保存先
 
 - claude.ai のアーティファクトとして開いたとき：アーティファクトのデータベースに保存されます（端末をまたいで同期）。
-- GitHub Pages など claude.ai の外で開いたとき：Googleでログインすると Firebase（Firestore）に保存されます。データは `users/{uid}/nodes`・`edges`・`projects` に置かれ、`firestore.rules` により本人しか読み書きできません。オフラインでも書け、通信が戻ると同期されます。
+- GitHub Pages など claude.ai の外で開いたとき：右上の「登録 / ログイン」から、Googleアカウントかメールアドレス＋パスワードで登録すると Firebase（Firestore）に保存されます。誰でも登録でき、各自のメモは本人しか読めません。お試しモードで書いたメモは、登録時に引き継げます。データは `users/{uid}/nodes`・`edges`・`projects` に置かれ、`firestore.rules` により本人しか読み書きできません。オフラインでも書け、通信が戻ると同期されます。
 - ログインしていないとき：サンプル入りの「お試しモード」で開きます。自由に書き込めますが、どこにも保存されず、ページを閉じると元に戻ります。
 
 ### Firebase の設定
 
-`index.html` の `FIREBASE_CONFIG` に、Firebase コンソールの「プロジェクトの設定 → マイアプリ（ウェブ）」に表示される値を入れます（公開しても問題のない値です）。Firestore の「ルール」には `firestore.rules` の内容を貼ります。
+`index.html` の `FIREBASE_CONFIG` に、Firebase コンソールの「プロジェクトの設定 → マイアプリ（ウェブ）」に表示される値を入れます（公開しても問題のない値です）。Firestore の「ルール」には `firestore.rules` の内容を貼ります。Authentication の「ログイン方法」で **Google** と **メール / パスワード** を有効にし、「設定 → 承認済みドメイン」に公開先のドメイン（例：`taichi20020330.github.io`）を追加します。
